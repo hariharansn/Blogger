@@ -2,6 +2,7 @@ const express = require('express');
 const { Sequelize, DataTypes } = require('sequelize');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 const app = express();
 const port = 3000;
@@ -18,12 +19,11 @@ app.use((err, req, res, next) => {
 
 
 // Create Sequelize instance
-const sequelize = new Sequelize('test', 'postgres', 'password', {
-  host: 'localhost',
-  dialect: 'postgres',
-  port: 5432, 
+const sequelize = new Sequelize(process.env.DB_NAME, process.env.DB_USER, process.env.DB_PASSWORD, {
+  host: process.env.DB_HOST,
+  dialect: process.env.DB_DIALECT,
+  port: process.env.DB_PORT,
 });
-
 
 
 
