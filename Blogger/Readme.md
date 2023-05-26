@@ -1,3 +1,5 @@
+#NOTE we can use only with the single sever.js file if want to use download *server.js* and *package.json* and run *npm install*
+
 # Blogger
 The provided code is a backend server implementation using Express.js framework, Sequelize ORM, and can use with  PostgreSQL, MYSQL, Oracle database. It defines routes and handlers for user registration, user login, creating blog posts, managing comments on posts, and performing CRUD operations on posts and comments.
 
