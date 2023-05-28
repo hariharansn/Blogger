@@ -6,17 +6,19 @@ const commentRoutes = require('./routes/commentRoutes');
 
 // Middleware for parsing JSON data
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Route handlers
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
-app.use('/api/comments', commentRoutes);
+app.use('/api/posts/:postId/comments', commentRoutes);
 
-// Error handler middleware
+// Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Internal Server Error' });
+  console.error('Error:', err);
+  res.status(500).json({ error: 'Server error' });
 });
+
 
 // Start the server
 app.listen(3000, () => {
