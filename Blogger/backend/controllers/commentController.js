@@ -1,133 +1,152 @@
-const Comment = require('../models/comment');
-const Post = require('../models/post');
 
-// Create a new comment
-const createComment = async (req, res) => {
-    try {
-      const { postId, content } = req.body;
-      
-      // Check if the user ID is available in the req.user object
-      if (!req.user || !req.user.id) {
-        return res.status(401).json({ message: 'User authentication failed' });
-      }
-      
-      const userId = req.user.id;
-  
-      // Check if the post exists
-      const post = await Post.findByPk(postId);
-  
-      if (!post) {
-        return res.status(404).json({ message: 'Post not found' });
-      }
-  
-      // Create a new comment
-      const newComment = await Comment.create({
-        postId,
-        content,
-        userId,
-      });
-  
-      res.status(201).json({ message: 'Comment created', comment: newComment });
-    } catch (error) {
-      console.error('Comment creation error:', error);
-      res.status(500).json({ message: 'Failed to create comment' });
-    }
-  };
-  
+const {Post,Comment}  =require('../models/model')
 
-// Get all comments for a post
-const getCommentsByPostId = async (req, res) => {
+
+// Create a new comment on a post
+exports.createComment = async (req, res, next) => {
   try {
-    const postId = req.params.postId;
+    const { postId } = req.params;
+    const { content } = req.body;
+    
 
-    // Check if the post exists
     const post = await Post.findByPk(postId);
 
     if (!post) {
-      return res.status(404).json({ message: 'Post not found' });
+      return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Get all comments for the post
+    const newComment = await Comment.create({ content, postId, userId });
+
+    res.status(201).json({ message: 'Comment created successfully', comment: newComment });
+  } catch (err) {
+    console.error('Error creating comment:', err);
+    next(err);
+  }
+};
+
+
+
+// Get all comments of a post
+exports.getCommentsByPostId = async (req, res, next) => {
+  try {
+    const { postId } = req.params;
+
+    const post = await Post.findByPk(postId);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
     const comments = await Comment.findAll({ where: { postId } });
 
-    res.status(200).json({ comments });
-  } catch (error) {
-    console.error('Error fetching comments:', error);
-    res.status(500).json({ message: 'Failed to fetch comments' });
+    res.status(200).json(comments);
+  } catch (err) {
+    console.error('Error getting comments:', err);
+    next(err);
   }
 };
 
 
-// Get a comment by its ID
-const getCommentById = async (req, res) => {
-    try {
-      const commentId = req.params.commentId;
-  
-      // Find the comment by its ID
-      const comment = await Comment.findByPk(commentId);
-  
-      if (!comment) {
-        return res.status(404).json({ message: 'Comment not found' });
-      }
-  
-      res.status(200).json({ comment });
-    } catch (error) {
-      console.error('Error fetching comment:', error);
-      res.status(500).json({ message: 'Failed to fetch comment' });
-    }
-  };
-    
 
-// Update a comment
-const updateComment = async (req, res) => {
+// Get a specific comment on a post
+exports.getCommentById = async (req, res, next) => {
   try {
-    const commentId = req.params.commentId;
+    const { postId, commentId } = req.params;
+
+    const post = await Post.findByPk(postId);
+
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+
+    const comment = await Comment.findOne({ where: { id: commentId, postId } });
+
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    res.status(200).json(comment);
+  } catch (err) {
+    console.error('Error getting comment:', err);
+    next(err);
+  }
+};
+
+
+
+// Update a comment on a specific post
+exports.updateComment = async (req, res, next) => {
+  try {
+    const { postId, commentId } = req.params;
     const { content } = req.body;
+    const { userId } = req;
 
-    const comment = await Comment.findByPk(commentId);
+    const post = await Post.findByPk(postId);
 
-    if (!comment) {
-      return res.status(404).json({ message: 'Comment not found' });
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Update the comment
-    await comment.update({
-      content,
-    });
+    const comment = await Comment.findOne({ where: { id: commentId, postId } });
 
-    res.status(200).json({ message: 'Comment updated', comment });
-  } catch (error) {
-    console.error('Comment update error:', error);
-    res.status(500).json({ message: 'Failed to update comment' });
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    if (comment.userId !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
+    comment.content = content;
+    await comment.save();
+
+    res.status(200).json({ message: 'Comment updated successfully', comment });
+  } catch (err) {
+    console.error('Error updating comment:', err);
+    next(err);
   }
 };
 
-// Delete a comment
-const deleteComment = async (req, res) => {
+
+// Delete a comment on a specific post
+exports.deleteComment = async (req, res, next) => {
   try {
-    const commentId = req.params.commentId;
+    const { postId, commentId } = req.params;
+    const { userId } = req;
 
-    const comment = await Comment.findByPk(commentId);
+    const post = await Post.findByPk(postId);
 
-    if (!comment) {
-      return res.status(404).json({ message: 'Comment not found' });
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
     }
 
-    // Delete the comment
+    const comment = await Comment.findOne({ where: { id: commentId, postId } });
+
+    if (!comment) {
+      return res.status(404).json({ error: 'Comment not found' });
+    }
+
+    if (comment.userId !== userId) {
+      return res.status(403).json({ error: 'Access denied' });
+    }
+
     await comment.destroy();
 
-    res.status(200).json({ message: 'Comment deleted' });
+    return res.status(200).json({ message: 'Comment deleted successfully' });
   } catch (error) {
-    console.error('Comment deletion error:', error);
-    res.status(500).json({ message: 'Failed to delete comment' });
+    console.error('Error deleting comment:', err);
+    next(error);
   }
 };
 
 
-module.exports = {
-    createComment,
-    getCommentsByPostId,
-    updateComment,
-    deleteComment,
-    getCommentById,
-  };
+
+
+
+
+
+
+
+
+
+
