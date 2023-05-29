@@ -59,11 +59,6 @@ const Comment = sequelize.define('comments', {
   updatedAt: 'updated_at', // Customize the updatedAt column name
 });
 
-
-User.prototype.getComments = function () {
-  return Comment.findAll({ where: { userId: this.id } });
-};
-
 // Define associations between models
 User.hasMany(Post, { foreignKey: 'userId' });
 Post.belongsTo(User, { foreignKey: 'userId' });
